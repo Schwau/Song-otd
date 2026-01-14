@@ -1,31 +1,32 @@
+import Background from "../components/Background";
+import DateSpinner from "../components/DateSpinner";
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#0b0b0f] text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-        <h1 className="text-4xl font-semibold">song·otd</h1>
+    <main className="relative min-h-screen text-white">
+      <Background />
 
-        <p className="text-white/70 mt-4 leading-relaxed">
-          Share your song of the day with friends.
-          One track a day. Simple group vibes.
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pt-20">
+        <DateSpinner />
+
+        <h1 className="mt-8 text-5xl font-semibold">
+          Song des Tages<br />
+          <span className="text-white/70">für deine Gruppe</span>
+        </h1>
+
+        <p className="mt-6 max-w-xl text-white/70">
+          Jeden Tag ein neuer Song – automatisch, fair verteilt und sofort in eurer Playlist.
         </p>
 
-        <div className="mt-8 flex gap-3 flex-wrap">
-          <a
-            href="/invite/ABC123"
-            className="px-5 py-3 rounded-2xl bg-[#1DB954]/20 border border-[#1DB954]/40 hover:bg-[#1DB954]/30 transition"
-          >
-            Try invite
-          </a>
-
-          <span className="px-5 py-3 rounded-2xl bg-white/10 border border-white/10 text-white/60">
-            App coming soon
-          </span>
+        <div className="mt-8 flex gap-4">
+          <button className="rounded-xl bg-white px-5 py-3 font-semibold text-black">
+            Jetzt starten
+          </button>
+          <button className="rounded-xl border border-white/20 px-5 py-3">
+            Mehr erfahren
+          </button>
         </div>
-
-        <p className="text-xs text-white/40 mt-6">
-          Built with Next.js · Vercel
-        </p>
-      </div>
+      </section>
     </main>
   );
 }

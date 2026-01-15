@@ -1,17 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const MONTHS_DE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
-export default function DateSpinner() {
+function buildSequence(values, cycles, targetIndex) {
+  const seq = [];
+  for (let c = 0; c < cycles; c++) seq.push(...values);
+  seq.push(...values.slice(0, targetIndex + 1));
+  return seq;
+}
+
+export default function DateSpinner({ size = "lg", onNearEnd, onDone }) {
   const [targetDay, setTargetDay] = useState(null);
   const [targetMonth, setTargetMonth] = useState(null);
+  const [dayIndex, setDayIndex] = useState(0);
+  const [monthIndex, setMonthIndex] = useState(0);
+  const [animate, setAnimate] = useState(false);
 
-  const [day, setDay] = useState(1);
-  const [monthIdx, setMonthIdx] = useState(0);
-
-  const startRef = useRef(null);
+  const startedRef = useRef(false);
+  const nearEndCalledRef = useRef(false);
+  const doneCalledRef = useRef(false);
 
   useEffect(() => {
     const d = new Date();
@@ -19,36 +28,98 @@ export default function DateSpinner() {
     setTargetMonth(d.getMonth());
   }, []);
 
-  useEffect(() => {
-    if (targetDay === null) return;
+  const { daySeq, monthSeq, finalDayIndex, finalMonthIndex } = useMemo(() => {
+    const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
+    const tDay = targetDay ?? 1;
+    const tMonth = targetMonth ?? 0;
 
-    const duration = 1300;
-    const start = performance.now();
-    startRef.current = start;
+    const daySeqBuilt = buildSequence(days, 3, tDay - 1);
+    const monthSeqBuilt = buildSequence(MONTHS_DE, 4, tMonth);
 
-    const animate = (time) => {
-      const p = Math.min((time - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-
-      const daySteps = 3 * 31 + (targetDay - 1);
-      const monthSteps = 4 * 12 + targetMonth;
-
-      setDay((Math.floor(eased * daySteps) % 31) + 1);
-      setMonthIdx(Math.floor(eased * monthSteps) % 12);
-
-      if (p < 1) requestAnimationFrame(animate);
+    return {
+      daySeq: daySeqBuilt,
+      monthSeq: monthSeqBuilt,
+      finalDayIndex: daySeqBuilt.length - 1,
+      finalMonthIndex: monthSeqBuilt.length - 1,
     };
-
-    requestAnimationFrame(animate);
   }, [targetDay, targetMonth]);
 
+  const itemH = size === "lg" ? 56 : 40;
+  const fontCls = size === "lg" ? "text-4xl" : "text-2xl";
+  const pillCls = size === "lg" ? "rounded-3xl px-6 py-5" : "rounded-2xl px-4 py-3";
+
+  const durationMs = 1500;
+  const nearEndMs = 260;
+  const easing = "cubic-bezier(0.12, 0.9, 0.12, 1)";
+
+  useEffect(() => {
+    if (targetDay == null || targetMonth == null) return;
+    if (startedRef.current) return; // ✅ prevents re-spin on rerenders
+    startedRef.current = true;
+
+    setAnimate(false);
+    setDayIndex(0);
+    setMonthIndex(0);
+
+    const t = setTimeout(() => {
+      setAnimate(true);
+      setDayIndex(finalDayIndex);
+      setMonthIndex(finalMonthIndex);
+
+      setTimeout(() => {
+        if (!nearEndCalledRef.current) {
+          nearEndCalledRef.current = true;
+          onNearEnd && onNearEnd();
+        }
+      }, Math.max(0, durationMs - nearEndMs));
+
+      setTimeout(() => {
+        if (!doneCalledRef.current) {
+          doneCalledRef.current = true;
+          onDone && onDone();
+        }
+      }, durationMs);
+    }, 30);
+
+    return () => clearTimeout(t);
+  }, [targetDay, targetMonth, finalDayIndex, finalMonthIndex, onNearEnd, onDone]);
+
   return (
-    <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+    <div className={`inline-flex items-center gap-3 border border-white/10 bg-white/5 backdrop-blur ${pillCls}`}>
       <span className="text-xs uppercase tracking-widest text-white/60">Heute</span>
-      <div className="flex gap-2 font-mono text-2xl">
-        <span className="w-[3ch] text-right tabular-nums">{String(day).padStart(2, "0")}</span>
+
+      <div className={`flex items-center gap-2 font-mono ${fontCls}`}>
+        <div className={`relative overflow-hidden text-right tabular-nums ${size === "lg" ? "h-14 w-[3ch]" : "h-10 w-[3ch]"}`}>
+          <div
+            style={{
+              transform: `translateY(${-dayIndex * itemH}px)`,
+              transition: animate ? `transform ${durationMs}ms ${easing}` : "none",
+            }}
+          >
+            {daySeq.map((v, i) => (
+              <div key={`d-${i}-${v}`} style={{ height: itemH, lineHeight: `${itemH}px` }}>
+                {v}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <span className="text-white/50">·</span>
-        <span className="w-[4ch]">{MONTHS_DE[monthIdx]}</span>
+
+        <div className={`relative overflow-hidden ${size === "lg" ? "h-14 w-[4ch]" : "h-10 w-[4ch]"}`}>
+          <div
+            style={{
+              transform: `translateY(${-monthIndex * itemH}px)`,
+              transition: animate ? `transform ${durationMs}ms ${easing}` : "none",
+            }}
+          >
+            {monthSeq.map((v, i) => (
+              <div key={`m-${i}-${v}`} style={{ height: itemH, lineHeight: `${itemH}px` }}>
+                {v}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

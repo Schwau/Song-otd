@@ -23,6 +23,9 @@ export default function InvitePage({ params }) {
   const [loading, setLoading] = useState(true);
   const [valid, setValid] = useState(false);
   const [groupInfo, setGroupInfo] = useState(null);
+  const [meLoading, setMeLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const canOpen = looksValid && !loading && valid;
 
   useEffect(() => {
     let alive = true;
@@ -38,7 +41,7 @@ export default function InvitePage({ params }) {
 
       setLoading(true);
       try {
-        const res = await fetch(`/api/invite/${encodeURIComponent(code)}`, {
+        const res = await fetch(`/api/invites/${encodeURIComponent(code)}`, {
           cache: "no-store",
         });
 
@@ -68,7 +71,61 @@ export default function InvitePage({ params }) {
     };
   }, [code, looksValid]);
 
-  const canOpen = !loading && valid;
+  useEffect(() => {
+    let alive = true;
+
+    async function runMe() {
+      setMeLoading(true);
+      try {
+        const res = await fetch("/api/me", { cache: "no-store", credentials: "same-origin" });
+        const data = await res.json();
+        if (!alive) return;
+        setLoggedIn(Boolean(data?.loggedIn));
+      } catch {
+        if (!alive) return;
+        setLoggedIn(false);
+      } finally {
+        if (!alive) return;
+        setMeLoading(false);
+      }
+    }
+
+    runMe();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const [joinMsg, setJoinMsg] = useState("");
+
+  async function joinGroup() {
+    setJoinMsg("Beitritt läuft…");
+
+    try {
+      const res = await fetch(`/api/invites/${encodeURIComponent(code)}/redeem`, {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setJoinMsg(`❌ Join Fehler (${res.status}): ${JSON.stringify(data)}`);
+        return;
+      }
+
+      const groupId = data?.groupId || "demo";
+      setJoinMsg(`✅ Beigetreten. Weiterleitung zu /group/${groupId}…`);
+
+      // ✅ redirect (nimm eins von beiden)
+      window.location.assign(`/group/${groupId}`);
+      // router.push(`/group/${groupId}`); router.refresh();
+    } catch (e) {
+      setJoinMsg(`❌ Network/JS Fehler: ${String(e)}`);
+    }
+  }
+
 
   return (
     <main className="relative min-h-screen text-white pt-20">
@@ -150,29 +207,52 @@ export default function InvitePage({ params }) {
 
             {/* Actions */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              {/* Primary: Web Join */}
-              <a
-                href={`/login?next=${encodeURIComponent(`/invite/${code}`)}`}
-                className={[
-                  "inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition",
-                  loading
-                    ? "bg-white/5 text-white/50 border border-white/10 cursor-wait"
-                    : valid
-                      ? "bg-[#1DB954] text-black hover:brightness-110 active:brightness-95"
-                      : "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed pointer-events-none",
-                ].join(" ")}
-              >
-                {loading ? "Prüfe…" : valid ? "Beitreten" : "Invite ungültig"}
-              </a>
+              {/* Primary: Join (web-first) */}
+              {!loggedIn ? (
+                <a
+                  href={`/login?next=${encodeURIComponent(`/invite/${code}`)}`}
+                  className={[
+                    "inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition",
+                    loading || meLoading
+                      ? "bg-white/5 text-white/50 border border-white/10 cursor-wait"
+                      : valid
+                        ? "bg-[#1DB954] text-black hover:brightness-110 active:brightness-95"
+                        : "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed pointer-events-none",
+                  ].join(" ")}
+                >
+                  {loading || meLoading ? "Prüfe…" : valid ? "Login um beizutreten" : "Invite ungültig"}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={joinGroup}
+                  disabled={loading || !valid}
+                  className={[
+                    "inline-flex flex-1 items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition",
+                    loading
+                      ? "bg-white/5 text-white/50 border border-white/10 cursor-wait"
+                      : valid
+                        ? "bg-[#1DB954] text-black hover:brightness-110 active:brightness-95"
+                        : "bg-white/5 text-white/30 border border-white/10 cursor-not-allowed",
+                  ].join(" ")}
+                >
+                  {loading ? "Prüfe…" : "Jetzt beitreten"}
+                </button>
+              )}
+              {joinMsg && (
+                <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-xs text-white/70">
+                  {joinMsg}
+                </div>
+              )}
 
-              {/* Secondary: App flow (mainly mobile) */}
+              {/* Secondary: App open (mostly mobile) */}
               <SmartRedirect code={code} disabled={!canOpen} />
             </div>
 
-
             <div className="mt-4 text-xs text-white/50">
-              Tipp: Am Handy kannst du auch direkt in der App beitreten. Am PC geht’s über den Login.
+              Am PC trittst du über den Login bei. Am Handy kannst du auch direkt in der App beitreten.
             </div>
+
           </div>
         </div>
       </section>

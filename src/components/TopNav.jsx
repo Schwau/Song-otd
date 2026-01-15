@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import Logo from "./Logo";
 
 function NavLink({ href, children }) {
@@ -15,6 +16,19 @@ function NavLink({ href, children }) {
 }
 
 export default function TopNav() {
+const [groupHref, setGroupHref] = useState(null);
+
+useEffect(() => {
+  const read = () => {
+    const gid = localStorage.getItem("songotd:lastGroupId");
+    setGroupHref(gid ? `/group/${gid}` : null);
+  };
+
+  read();
+  window.addEventListener("focus", read);
+  return () => window.removeEventListener("focus", read);
+}, []);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40">
       {/* full-width bar */}
@@ -37,9 +51,14 @@ export default function TopNav() {
               <NavLink href="#funktion">So funktioniert’s</NavLink>
               <NavLink href="#roadmap">Roadmap</NavLink>
               <NavLink href="/login">Login</NavLink>
-              <span className="text-sm font-semibold text-white/35" title="Kommt bald">
-                Gruppen
-              </span>
+              {groupHref ? (
+                <NavLink href={groupHref}>Gruppe</NavLink>
+              ) : (
+                <span className="text-sm font-semibold text-white/35" title="Noch keine Gruppe">
+                  Gruppe
+                </span>
+              )}
+
             </nav>
 
             {/* CTA */}

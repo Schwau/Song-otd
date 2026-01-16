@@ -10,20 +10,44 @@ import TopNav from "../components/TopNav";
 import DateSpinner from "../components/DateSpinner";
 import DateBadge from "../components/DateBadge";
 
+import { useEffect } from "react";
+
+function todayKey() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export default function Home() {
   /**
    * PHASES:
    * - "spin":  Fullscreen DateSpinner overlay is visible and spinning.
    * - "reveal": Spinner overlay fades out, DateBadge + Landing content fades in.
    */
-  const [phase, setPhase] = useState("spin");
+  const [phase, setPhase] = useState("init");
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem("songotd_spinner_lastSeen");
+      setPhase(last === todayKey() ? "reveal" : "spin");
+    } catch {
+      setPhase("spin");
+    }
+  }, []);
+   
 
   /**
    * Spinner calls onDone() when it finishes.
    * We keep it on screen a short moment so the user can "read" the result.
    */
   const handleDone = useCallback(() => {
-    setTimeout(() => setPhase("reveal"), 550);
+    setTimeout(() => {
+      try {
+        localStorage.setItem("songotd_spinner_lastSeen", todayKey());
+      } catch {}
+      setPhase("reveal");
+    }, 550);
   }, []);
 
   // Convenience flags for readability
@@ -51,35 +75,36 @@ export default function Home() {
       </div>
 
 
-      {/* 4) FULLSCREEN SPINNER OVERLAY (only visible while phase === "spin") */}
-      <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none">
-        {/* 4a) Vignette behind the spinner (fades out after spin) */}
-        <div
-          className={[
-            "absolute inset-0 transition-opacity duration-700 ease-out",
-            phase === "spin" ? "opacity-100" : "opacity-0",
-            "bg-gradient-to-b from-black/30 via-black/20 to-black/40",
-          ].join(" ")}
-        />
+      {/* 4) FULLSCREEN SPINNER OVERLAY */}
+      {phase === "spin" && (
+        <div className="fixed inset-0 z-20 pointer-events-none">
+          {/* 4a) Vignette */}
+          <div
+            className={[
+              "absolute inset-0 transition-opacity duration-700 ease-out",
+              "bg-gradient-to-b from-black/30 via-black/20 to-black/40",
+            ].join(" ")}
+          />
 
-        {/* 4b) Spinner container (floats while spinning, fades out on reveal)
-               NOTE: Glow is kept EXACTLY like your version. */}
-        <div
-          className={[
-            "relative transition-all duration-700 ease-out will-change-transform",
-            phase === "spin"
-              ? "opacity-100 scale-100 blur-0 animate-[floaty_2.8s_ease-in-out_infinite]"
-              : "opacity-0 scale-[0.92] blur-sm",
-          ].join(" ")}
-        >
-          {/* Glow (unchanged, as requested) */}
-          <div className="absolute inset-0 -z-10 rounded-[2rem] bg-white/10 blur-2xl" />
-          <div className="absolute inset-0 -z-10 rounded-[2rem] bg-emerald-400/10 blur-3xl" />
+          {/* 4b) Spinner container */}
+          <div className="flex h-full w-full items-center justify-center">
+            <div
+              className={[
+                "relative transition-all duration-700 ease-out will-change-transform",
+                "opacity-100 scale-100 blur-0 animate-[floaty_2.8s_ease-in-out_infinite]",
+              ].join(" ")}
+            >
+              {/* Glow */}
+              <div className="absolute inset-0 -z-10 rounded-[2rem] bg-white/10 blur-2xl" />
+              <div className="absolute inset-0 -z-10 rounded-[2rem] bg-emerald-400/10 blur-3xl" />
 
-          {/* The actual spinning date component */}
-          <DateSpinner size="lg" onDone={handleDone} />
+              {/* Spinner */}
+              <DateSpinner size="lg" onDone={handleDone} />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
 
       {/* 5) HERO CONTENT (appears only after spinner is done) */}
       <section className="relative z-10 mx-auto max-w-6xl px-6 pt-6 pb-10">

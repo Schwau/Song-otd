@@ -3,19 +3,27 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "./Logo";
+import { usePathname } from "next/navigation";
 
-function NavLink({ href, children }) {
+function NavLink({ href, children, active }) {
   return (
     <Link
       href={href}
-      className="text-sm font-semibold text-white/70 hover:text-white transition"
+      className={[
+        "text-sm font-semibold transition",
+        active
+          ? "text-[#1DB954]"
+          : "text-white/70 hover:text-white",
+      ].join(" ")}
     >
       {children}
     </Link>
   );
 }
 
+
 export default function TopNav() {
+const pathname = usePathname();
 const [groupHref, setGroupHref] = useState(null);
 
 useEffect(() => {
@@ -48,18 +56,27 @@ useEffect(() => {
 
             {/* Links */}
             <nav className="hidden md:flex items-center gap-6">
-              <NavLink href="#funktion">So funktioniert’s</NavLink>
-              <NavLink href="#roadmap">Roadmap</NavLink>
-              <NavLink href="/login">Login</NavLink>
-              {groupHref ? (
-                <NavLink href={groupHref}>Gruppe</NavLink>
-              ) : (
-                <span className="text-sm font-semibold text-white/35" title="Noch keine Gruppe">
-                  Gruppe
-                </span>
-              )}
+              <NavLink href="#funktion" active={false}>
+                So funktioniert’s
+              </NavLink>
 
+              <NavLink href="#roadmap" active={false}>
+                Roadmap
+              </NavLink>
+
+              <NavLink href="/login" active={pathname === "/login"}>
+                Login
+              </NavLink>
+
+              <NavLink
+                href="/groups"
+                active={pathname === "/groups" || pathname.startsWith("/group")}
+              >
+                Gruppen
+              </NavLink>
             </nav>
+
+
 
             {/* CTA */}
             <Link

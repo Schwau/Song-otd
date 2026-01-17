@@ -1,20 +1,7 @@
 import { NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/auth";
 
-export const runtime = "nodejs";
-
-export async function GET(req) {
-  const session = req.cookies.get("songotd_session")?.value;
-
-  if (!session) {
-    return NextResponse.json({ loggedIn: false }, { status: 200 });
-  }
-
-  // stub user
-  return NextResponse.json(
-    {
-      loggedIn: true,
-      user: { id: "dev-user", name: "Joao (dev)" },
-    },
-    { status: 200, headers: { "Cache-Control": "no-store" } }
-  );
+export async function GET() {
+  const user = await getUserFromRequest();
+  return NextResponse.json({ user });
 }

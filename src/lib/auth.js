@@ -23,3 +23,9 @@ export async function getUserFromRequest() {
 
   return session.user;
 }
+
+export async function requireUser() {
+  const user = await getUserFromRequest();
+  if (!user) throw new Error("UNAUTHORIZED");
+  return user;
+}

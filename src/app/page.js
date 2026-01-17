@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 
 // Background + UI
 import Background from "../components/Background";
-import TopNav from "../components/TopNav";
 
 // Date UI
 import DateSpinner from "../components/DateSpinner";
@@ -58,9 +57,6 @@ export default function Home() {
     <main className="relative min-h-screen text-white pt-20">
       {/* 1) BACKGROUND LAYER (always visible) */}
       <Background />
-
-      {/* 2) TOP NAV (fixed bar) */}
-      <TopNav />
 
       {/* Date badge – aligned with hero text */}
       <div className="relative z-10 mx-auto max-w-6xl px-6 pt-6">

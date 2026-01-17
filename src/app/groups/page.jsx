@@ -1,5 +1,4 @@
 import Background from "../../components/Background";
-import TopNav from "../../components/TopNav";
 
 export default function GroupsPage() {
   // DEV STUBS (später DB)
@@ -12,7 +11,6 @@ export default function GroupsPage() {
   return (
     <main className="relative min-h-screen text-white pt-20">
       <Background />
-      <TopNav />
 
       <section className="relative z-10 mx-auto max-w-6xl px-6 pt-10 pb-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

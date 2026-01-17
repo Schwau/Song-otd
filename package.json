@@ -7,7 +7,7 @@
     "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "node -e \"if (process.env.VERCEL) require('child_process').execSync('npx prisma generate', { stdio: 'inherit' })\""
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",

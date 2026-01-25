@@ -87,7 +87,7 @@ export default function InviteClient({ code }) {
         });
         const data = await res.json();
         if (!alive) return;
-        setLoggedIn(Boolean(data?.loggedIn));
+        setLoggedIn(Boolean(data?.user));
       } catch {
         if (!alive) return;
         setLoggedIn(false);
@@ -118,20 +118,31 @@ export default function InviteClient({ code }) {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        setJoinMsg(`❌ Join Fehler (${res.status}): ${JSON.stringify(data)}`);
+        const msg =
+          data?.error ||
+          (typeof data === "string" ? data : null) ||
+          "Join fehlgeschlagen.";
+        setJoinMsg(`❌ ${msg}`);
         return;
       }
 
       const groupId = data?.groupId;
-        if (!groupId) {
-        setJoinMsg("❌ keine groupId");
+      if (!groupId) {
+        setJoinMsg("❌ Join ok, aber keine groupId bekommen.");
         return;
-        }
+      }
 
-        localStorage.setItem("songotd:lastGroupId", groupId);
+      localStorage.setItem("songotd:lastGroupId", groupId);
 
-        router.push(`/group/${groupId}`);
-        router.refresh();
+      if (data?.alreadyMember) {
+        setJoinMsg("✅ Du bist schon Mitglied. Öffne Gruppe…");
+      } else {
+        setJoinMsg("✅ Beigetreten. Öffne Gruppe…");
+      }
+
+      router.push(`/group/${groupId}`);
+      router.refresh();
+
     } catch (e) {
       setJoinMsg(`❌ Network/JS Fehler: ${String(e)}`);
     }
@@ -237,14 +248,14 @@ export default function InviteClient({ code }) {
                 </button>
               )}
 
-              {joinMsg && (
-                <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-xs text-white/70">
-                  {joinMsg}
-                </div>
-              )}
-
               <SmartRedirect code={safeCode} disabled={!canOpen} />
             </div>
+            
+            {joinMsg && (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-xs text-white/70">
+                {joinMsg}
+              </div>
+            )}
 
             <div className="mt-4 text-xs text-white/50">
               Am PC trittst du über den Login bei. Am Handy kannst du auch direkt in der App beitreten.

@@ -108,10 +108,18 @@ function NavLink({ href, children, active }) {
 export default function TopNav() {
   const me = useMe();
   const pathname = usePathname();
+  const isGroupPage = pathname?.startsWith("/group");
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 h-[72px]">
-      <div className="h-full border-b border-white/10 bg-black/30 backdrop-blur">
+      <div
+        className={[
+          "h-full border-b border-white/10",
+          isGroupPage
+            ? "bg-black/60"
+            : "bg-black/30 backdrop-blur",
+        ].join(" ")}
+      >
         <div className="mx-auto h-full max-w-6xl px-6">
           <div className="flex h-full items-center justify-between gap-4">
             {/* Brand */}

@@ -32,7 +32,8 @@ export default function Home() {
   const [results, setResults] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
   const [searching, setSearching] = useState(false);
-
+  const [me, setMe] = useState(null);
+  const [meLoading, setMeLoading] = useState(true);
   /* ======================
      SPINNER LOGIC
      ====================== */
@@ -53,6 +54,32 @@ export default function Home() {
       } catch {}
       setPhase("reveal");
     }, 550);
+  }, []);
+  
+  useEffect(() => {
+    let alive = true;
+
+    async function loadMe() {
+      try {
+        const res = await fetch("/api/me", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!alive) return;
+        setMe(data?.user ?? null);
+      } catch {
+        if (!alive) return;
+        setMe(null);
+      } finally {
+        if (!alive) return;
+        setMeLoading(false);
+      }
+    }
+
+    loadMe();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   /* ======================
@@ -220,92 +247,115 @@ export default function Home() {
           </div>
         )}
        
-        {/* ======================
-            SONG INPUT (NUR WENN KEIN SONG)
-           ====================== */}
+       {/* ======================
+            SONG INPUT / LOGIN GUARD
+          ====================== */}
 
-        {!songLoading && !song && (
+        {/* NOT LOGGED IN */}
+        {!meLoading && !me && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 px-6 py-6">
+            <div className="text-lg font-semibold">
+              Melde dich an, um deinen Song des Tages zu setzen
+            </div>
+
+            <p className="mt-2 text-sm text-white/60">
+              Dein Song des Tages ist persönlich – bitte logge dich ein.
+            </p>
+
+            <a
+              href="/login"
+              className="mt-4 inline-flex items-center justify-center rounded-2xl bg-[#1DB954] px-5 py-3 text-sm font-semibold text-black
+                        hover:bg-[#21e065] transition"
+            >
+              Zum Login
+            </a>
+          </div>
+        )}
+
+        {/* LOGGED IN + NO SONG YET */}
+        {!meLoading && me && !songLoading && !song && (
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
             <div className="text-sm font-semibold">Setze deinen Song des Tages</div>
 
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Song suchen…"
-                className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40"
-              />
-              {selectedSong && (
-                <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-3 py-2">
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white/10">
-                    {selectedSong.coverUrl && (
-                      <img
-                        src={selectedSong.coverUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </div>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Song suchen…"
+              className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40"
+            />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">
-                      {selectedSong.trackName}
-                    </div>
-                    <div className="truncate text-xs text-white/60">
-                      {selectedSong.artistName}
-                    </div>
-                  </div>
+            {selectedSong && (
+              <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-3 py-2">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white/10">
+                  {selectedSong.coverUrl && (
+                    <img
+                      src={selectedSong.coverUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedSong(null);
-                      setQuery("");
-                    }}
-                    className="rounded-md px-2 py-1 text-xs text-white/60 hover:text-white"
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">
+                    {selectedSong.trackName}
+                  </div>
+                  <div className="truncate text-xs text-white/60">
+                    {selectedSong.artistName}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSelectedSong(null);
+                    setQuery("");
+                  }}
+                  className="rounded-md px-2 py-1 text-xs text-white/60 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {query.length > 0 && !selectedSong && (
+              <div className="mt-3 space-y-2">
+                {searching && (
+                  <div className="text-xs text-white/50">Suche…</div>
+                )}
+
+                {!searching && results.length === 0 && (
+                  <div className="text-xs text-white/50">Keine Treffer</div>
+                )}
+
+                {results.map((item, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedSong(item)}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 transition
+                    hover:bg-emerald-400/10 hover:border-emerald-400/30"
                   >
-                    ✕
-                  </button>
-                </div>
-              )}
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white/10">
+                      {item.coverUrl && (
+                        <img
+                          src={item.coverUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
 
-              {query.length > 0 && !selectedSong && (
-                <div className="mt-3 space-y-2">
-                  {searching && (
-                    <div className="text-xs text-white/50">Suche…</div>
-                  )}
-
-                  {!searching && results.length === 0 && (
-                    <div className="text-xs text-white/50">Keine Treffer</div>
-                  )}
-
-                  {results.map((item, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedSong(item)}
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 transition
-                      hover:bg-emerald-400/10 hover:border-emerald-400/30"
-                    >
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white/10">
-                        {item.coverUrl && (
-                          <img
-                            src={item.coverUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        )}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {item.trackName}
                       </div>
-
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">
-                          {item.trackName}
-                        </div>
-                        <div className="truncate text-xs text-white/60">
-                          {item.artistName}
-                        </div>
+                      <div className="truncate text-xs text-white/60">
+                        {item.artistName}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="mt-4 flex items-center gap-3">
               <button
@@ -323,7 +373,7 @@ export default function Home() {
                   disabled:opacity-50
                   disabled:hover:bg-[#1DB954]
                   disabled:hover:shadow-none
-                  "
+                "
               >
                 {saving ? "Speichern…" : "Song speichern"}
               </button>
@@ -334,6 +384,7 @@ export default function Home() {
             </div>
           </div>
         )}
+
       </section>
     </main>
   );

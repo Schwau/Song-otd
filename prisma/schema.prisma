@@ -17,6 +17,8 @@ model User {
 
   sessions        Session[]
   memberships     Membership[]
+
+  songs           SongOfTheDay[]
 }
 
 
@@ -76,3 +78,22 @@ model MagicLink {
   usedAt    DateTime?
   createdAt DateTime @default(now())
 }
+
+model SongOfTheDay {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime
+
+  spotifyTrackId  String
+  trackName       String
+  artistName      String
+  coverUrl        String?
+
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([date])
+}
+

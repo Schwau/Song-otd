@@ -18,6 +18,9 @@ export default function GroupPage({ params }) {
   const [inviteError, setInviteError] = useState(null);
   const [inviteLink, setInviteLink] = useState(null);
   const [inviteExpiresAt, setInviteExpiresAt] = useState(null);
+  const [songs, setSongs] = useState([]);
+  const [songsLoading, setSongsLoading] = useState(true);
+
   
   async function createInvite() {
     if (!groupId) return;
@@ -128,6 +131,40 @@ export default function GroupPage({ params }) {
       cancelled = true;
     };
   }, [router, groupId]);
+  
+  useEffect(() => {
+    if (!groupId) return;
+
+    let alive = true;
+
+    async function loadSongs() {
+      setSongsLoading(true);
+      try {
+        const res = await fetch(`/api/groups/${groupId}/songs`, {
+          cache: "no-store",
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        if (!alive) return;
+
+        setSongs(data?.songs ?? []);
+        console.log("GROUP SONGS:", data?.songs);
+      } catch (e) {
+        console.error("Failed to load group songs", e);
+        if (!alive) return;
+        setSongs([]);
+      } finally {
+        if (!alive) return;
+        setSongsLoading(false);
+      }
+    }
+
+    loadSongs();
+    return () => {
+      alive = false;
+    };
+  }, [groupId]);
 
   return (
     <main className="relative min-h-screen text-white pt-20">

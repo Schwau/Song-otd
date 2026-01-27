@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/db";
 
 export async function POST(req) {
-  const { email } = await req.json();
+  const { email, next } = await req.json();
 
   if (!email || !email.includes("@")) {
     return NextResponse.json(
@@ -20,6 +20,7 @@ export async function POST(req) {
       email,
       token,
       expiresAt,
+      next: typeof next === "string" && next.startsWith("/") ? next : "/",
     },
   });
 

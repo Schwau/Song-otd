@@ -55,7 +55,12 @@ export async function GET(req) {
     data: { usedAt: new Date() },
   });
 
-  const target = user.onboardingDone ? "/groups" : "/onboarding";
+  const next =
+    typeof magic.next === "string" && magic.next.startsWith("/")
+      ? magic.next
+      : "/";
+
+  const target = user.onboardingDone ? next : "/onboarding";
   const res = NextResponse.redirect(new URL(target, req.url));
 
   res.cookies.set(SESSION_COOKIE, sessionToken, {

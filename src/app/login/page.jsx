@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
   const [error, setError] = useState("");
   const [magicUrl, setMagicUrl] = useState("");
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -18,7 +21,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/magic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, next }),
       });
 
       const data = await res.json().catch(() => ({}));

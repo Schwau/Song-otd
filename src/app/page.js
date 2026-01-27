@@ -26,11 +26,12 @@ export default function Home() {
 
   const [songLoading, setSongLoading] = useState(true);
   const [song, setSong] = useState(null);
-
-  const [trackName, setTrackName] = useState("");
-  const [artistName, setArtistName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [searching, setSearching] = useState(false);
 
   /* ======================
      SPINNER LOGIC
@@ -83,29 +84,47 @@ export default function Home() {
     return () => {
       alive = false;
     };
+
   }, []);
+  
+  useEffect(() => {
+      if (!query || query.length < 2) {
+        setResults([]);
+        return;
+      }
+
+      setSearching(true);
+
+      const t = setTimeout(async () => {
+        try {
+          const res = await fetch(
+            `/api/music/search?q=${encodeURIComponent(query)}`
+          );
+          const data = await res.json();
+          setResults(data.results || []);
+        } catch {
+          setResults([]);
+        } finally {
+          setSearching(false);
+        }
+      }, 300); // debounce
+
+      return () => clearTimeout(t);
+    }, [query]);
 
   /* ======================
      SAVE SONG
      ====================== */
-  
 
-  async function fetchAppleCover(trackName, artistName) {
-    const res = await fetch(
-      `/api/music/apple?track=${encodeURIComponent(trackName)}&artist=${encodeURIComponent(artistName)}`
-    );
-    const data = await res.json();
-    return data.coverUrl ?? null;
-  }
 
   async function saveSong() {
-    if (!trackName || !artistName) return;
+    if (!selectedSong) return;
 
     setSaving(true);
     setSaveError(null);
 
     try {
-      const coverUrl = await fetchAppleCover(trackName, artistName);
+      const { trackName, artistName, coverUrl } = selectedSong;
       const res = await fetch("/api/song-of-the-day", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,8 +145,7 @@ export default function Home() {
       }
 
       setSong(data.song);
-      setTrackName("");
-      setArtistName("");
+      
     } catch {
       setSaveError("Netzwerkfehler");
     } finally {
@@ -209,27 +227,102 @@ export default function Home() {
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
             <div className="text-sm font-semibold">Setze deinen Song des Tages</div>
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <input
-                value={trackName}
-                onChange={(e) => setTrackName(e.target.value)}
-                placeholder="Songtitel"
-                className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Song suchen…"
+                className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40"
               />
+              {selectedSong && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-3 py-2">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white/10">
+                    {selectedSong.coverUrl && (
+                      <img
+                        src={selectedSong.coverUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                  </div>
 
-              <input
-                value={artistName}
-                onChange={(e) => setArtistName(e.target.value)}
-                placeholder="Artist"
-                className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40"
-              />
-            </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">
+                      {selectedSong.trackName}
+                    </div>
+                    <div className="truncate text-xs text-white/60">
+                      {selectedSong.artistName}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedSong(null);
+                      setQuery("");
+                    }}
+                    className="rounded-md px-2 py-1 text-xs text-white/60 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {query.length > 0 && !selectedSong && (
+                <div className="mt-3 space-y-2">
+                  {searching && (
+                    <div className="text-xs text-white/50">Suche…</div>
+                  )}
+
+                  {!searching && results.length === 0 && (
+                    <div className="text-xs text-white/50">Keine Treffer</div>
+                  )}
+
+                  {results.map((item, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedSong(item)}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 transition
+                      hover:bg-emerald-400/10 hover:border-emerald-400/30"
+                    >
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-white/10">
+                        {item.coverUrl && (
+                          <img
+                            src={item.coverUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">
+                          {item.trackName}
+                        </div>
+                        <div className="truncate text-xs text-white/60">
+                          {item.artistName}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
             <div className="mt-4 flex items-center gap-3">
               <button
                 onClick={saveSong}
-                disabled={saving || !trackName || !artistName}
-                className="rounded-2xl bg-[#1DB954] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                disabled={saving || !selectedSong}
+                className="
+                  rounded-2xl
+                  bg-[#1DB954]
+                  px-4 py-2
+                  text-sm font-semibold text-black
+                  transition-all duration-150
+                  hover:bg-[#21e065]
+                  hover:shadow-[0_0_0_3px_rgba(29,185,84,0.25)]
+                  active:scale-[0.97]
+                  disabled:opacity-50
+                  disabled:hover:bg-[#1DB954]
+                  disabled:hover:shadow-none
+                  "
               >
                 {saving ? "Speichern…" : "Song speichern"}
               </button>

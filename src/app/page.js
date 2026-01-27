@@ -178,8 +178,9 @@ export default function Home() {
       {/* Spinner */}
       {phase === "spin" && (
         <div className="fixed inset-0 z-20 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40" />
-          <div className="flex h-full w-full items-center justify-center">
+          <div className="absolute inset-0 backdrop-blur-xl bg-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30" />
+          <div className="flex h-full w-full items-center justify-center translate-y-[-1.5rem]">
             <div className="relative animate-[floaty_2.8s_ease-in-out_infinite]">
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-white/10 blur-2xl" />
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-emerald-400/10 blur-3xl" />

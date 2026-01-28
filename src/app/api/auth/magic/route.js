@@ -1,7 +1,8 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
-
 export async function POST(req) {
   const { email, next } = await req.json();
 
@@ -20,7 +21,6 @@ export async function POST(req) {
       email,
       token,
       expiresAt,
-      next: typeof next === "string" && next.startsWith("/") ? next : "/",
     },
   });
 
@@ -30,7 +30,6 @@ console.log("✨ MAGIC LINK:", url);
 
 return NextResponse.json({
   ok: true,
-  // nur in dev zurückgeben (praktisch zum Testen)
   ...(process.env.NODE_ENV !== "production" ? { url } : {}),
 });
 }

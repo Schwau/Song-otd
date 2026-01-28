@@ -180,160 +180,156 @@ export default function GroupPage({ params }) {
           ← Alle Gruppen
         </a>
 
-        <header className="mt-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6">
-          <div className="text-xs uppercase tracking-widest text-white/50">
+        <header className="
+          mt-6
+          rounded-3xl
+          bg-gradient-to-br from-white/10 via-white/5 to-transparent
+          border border-white/10
+          p-8
+          relative
+        ">
+          <div className="text-xs uppercase tracking-widest text-white/40">
             Gruppe
           </div>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight">
             {loading ? "Lädt…" : group?.name ?? "Unbekannte Gruppe"}
           </h1>
 
-          <p className="mt-2 text-sm text-white/60">
-            {loading ? (
-              "…"
-            ) : error ? (
-              error
-            ) : (
-              <>
-                {group?.members?.length ?? 0} Mitglieder · Deine Rolle:{" "}
-                {group?.yourRole ?? "member"}
-              </>
-            )}
-          </p>
+          {!loading && !error && (
+            <p className="mt-2 text-sm text-white/60">
+              {group?.members?.length ?? 0} Mitglieder · Deine Rolle:{" "}
+              {group?.yourRole ?? "member"}
+            </p>
+          )}
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-
+          {group?.yourRole === "owner" && (
             <button
-              type="button"
               onClick={createInvite}
-              disabled={loading || !!error || inviteLoading || !group || group.yourRole !== "owner"}
-              className={[
-                "rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition",
-                "hover:bg-white/10",
-                (loading || !!error || inviteLoading || !group || group.yourRole !== "owner")
-                  ? "opacity-50 cursor-not-allowed hover:bg-white/5"
-                  : "",
-              ].join(" ")}
-              title={
-                group?.yourRole !== "owner"
-                  ? "Nur Owner können Invites erstellen"
-                  : "Invite Link erstellen"
-              }
+              disabled={inviteLoading}
+              className="
+                absolute top-6 right-6
+                rounded-full bg-white/10
+                px-4 py-2 text-sm font-semibold
+                hover:bg-white/15 transition
+                disabled:opacity-50
+              "
             >
               {inviteLoading ? "Erstelle…" : "Invite erstellen"}
             </button>
-          </div>
-          {inviteError && (
-            <div className="mt-3 text-sm text-red-300">
-              {inviteError}
-            </div>
           )}
-
-          {inviteLink && (
-            <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-xs uppercase tracking-widest text-white/50">
-                    Invite Link
-                  </div>
-                  <div className="mt-1 break-all text-sm text-white/80">
-                    {inviteLink}
-                  </div>
-
-                  {inviteExpiresAt && (
-                    <div className="mt-2 text-xs text-white/55">
-                      Läuft ab:{" "}
-                      {new Date(inviteExpiresAt).toLocaleString("de-DE", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(inviteLink);
-                    } catch {}
-                  }}
-                  className="shrink-0 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          )}
-
-
         </header>
 
-        <section className="mt-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white/80">Mitglieder</h2>
-            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-white/70">
-              Coming soon
-            </span>
-          </div>
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold text-white/80">
+            Heute
+          </h2>
 
           {songsLoading ? (
-              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-6">
-                <p className="text-white/70">Lade Songs…</p>
-              </div>
-            ) : songs.length === 0 ? (
-              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-6">
-                <p className="text-white/70">
-                  Heute hat noch niemand einen Song gesetzt.
-                </p>
-              </div>
-            ) : (
-              <div className="mt-3 space-y-2">
-                {songs.map((entry) => {
-                  const isMe = entry.user.id === me?.id;
-                  const hasSong = !!entry.song;
+            <div className="mt-4 text-white/60">
+              Lade Songs…
+            </div>
+          ) : songs.length === 0 ? (
+            <div className="mt-4 text-white/50">
+              🌅 Heute hat noch niemand einen Song gesetzt
+            </div>
+          ) : (
+            <div className="mt-4 space-y-1">
+              {songs.map((entry) => {
+                const isMe = entry.user.id === me?.id;
+                const hasSong = !!entry.song;
 
-                  return (
-                    <div
-                      key={entry.user.id}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
-                    >
+                return (
+                  <div
+                    key={entry.user.id}
+                    className="
+                      flex items-center justify-between
+                      px-6 py-4
+                      rounded-3xl
+                      bg-white/[0.02]
+                      hover:bg-white/[0.06]
+                      transition
+                    "
+                  >
+                    {/* LEFT */}
+                    <div className="flex items-center gap-5 min-w-0">
+                      {/* Avatar */}
+                      <div
+                        className="
+                          h-14 w-14 rounded-full
+                          bg-white/10
+                          flex items-center justify-center
+                          text-lg font-semibold
+                          shrink-0
+                        "
+                      >
+                        {entry.user.username?.[0]?.toUpperCase() ?? "?"}
+                      </div>
+
+                      {/* Name + Song */}
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-white">
+                        <div className="text-base font-semibold truncate">
                           @{entry.user.username ?? "user"}
                         </div>
 
                         {hasSong ? (
-                          <div className="mt-1 text-xs text-white/60">
-                            🎵 {entry.song.trackName} – {entry.song.artistName}
+                          <div className="mt-2 flex items-center gap-4">
+                            {/* Cover */}
+                            <div className="h-14 w-14 rounded-xl overflow-hidden bg-white/10 shrink-0">
+                              {entry.song.coverUrl && (
+                                <img
+                                  src={entry.song.coverUrl}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              )}
+                            </div>
+
+                            {/* Song Meta */}
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium truncate">
+                                {entry.song.trackName}
+                              </div>
+                              <div className="text-xs text-white/60 truncate">
+                                {entry.song.artistName}
+                              </div>
+                            </div>
                           </div>
                         ) : (
-                          <div className="mt-1 text-xs text-white/50">
+                          <div className="mt-2 text-sm text-white/50">
                             Heute noch kein Song
                           </div>
                         )}
                       </div>
-
-                      {!hasSong && isMe && (
-                        <button
-                          onClick={() => router.push("/")}
-                          className="shrink-0 rounded-xl bg-[#1DB954] px-3 py-2 text-xs font-semibold text-black hover:brightness-110 transition"
-                        >
-                          Song hinzufügen
-                        </button>
-                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
 
+                    {/* RIGHT */}
+                    {!hasSong && isMe && (
+                      <button
+                        onClick={() => router.push("/")}
+                        className="
+                          shrink-0
+                          rounded-xl bg-[#1DB954]
+                          px-4 py-2.5
+                          text-sm font-semibold
+                          text-black
+                          hover:brightness-110
+                          transition
+                        "
+                      >
+                        Song hinzufügen
+                      </button>
+                    )}
+                  </div>
+
+                );
+              })}
+            </div>
+          )}
         </section>
 
-        <div className="mt-6 text-xs text-white/40">
-          (Später: Feed/Songs/Invites. Jetzt: echte Group Daten + Members aus DB)
-        </div>
+
+
       </section>
     </main>
   );

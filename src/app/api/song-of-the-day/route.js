@@ -11,9 +11,12 @@ function readSessionToken(req) {
 
 function todayKey() {
   const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`; // "2026-01-28"
 }
+
 
 export async function GET(req) {
   try {
@@ -27,14 +30,14 @@ export async function GET(req) {
       return NextResponse.json({ song: null });
     }
 
-    const song = await prisma.songOfTheDay.findUnique({
+    const song = await prisma.songOfTheDay.findFirst({
       where: {
-        userId_date: {
-          userId: session.userId,
-          date: todayKey(),
-        },
+        userId: session.userId,
+        date: todayKey(),
       },
     });
+
+
 
     return NextResponse.json({ song });
   } catch (e) {

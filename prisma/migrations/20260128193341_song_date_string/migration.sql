@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "SongOfTheDay" ALTER COLUMN "date" SET DATA TYPE TEXT;

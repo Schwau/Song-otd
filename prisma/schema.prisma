@@ -7,40 +7,34 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  createdAt       DateTime @default(now())
-
-  email           String?  @unique
-  username        String?  @unique
-  imageUrl        String?
-  onboardingDone  Boolean  @default(false)
-
-  sessions        Session[]
-  memberships     Membership[]
-
-  songs           SongOfTheDay[]
+  id             String         @id @default(cuid())
+  username       String?        @unique
+  createdAt      DateTime       @default(now())
+  email          String?        @unique
+  imageUrl       String?
+  onboardingDone Boolean        @default(false)
+  memberships    Membership[]
+  sessions       Session[]
+  songs          SongOfTheDay[]
 }
 
-
 model Session {
-  token      String   @id
-  userId     String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
 }
 
 model Group {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
-  createdAt   DateTime      @default(now())
-
-  memberships Membership[]
+  createdAt   DateTime     @default(now())
   invites     Invite[]
+  memberships Membership[]
 }
 
 model Membership {
@@ -48,22 +42,20 @@ model Membership {
   groupId   String
   role      String   @default("member")
   createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, groupId])
   @@index([groupId])
 }
 
 model Invite {
-  code      String   @id
+  code      String    @id
   groupId   String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   usedAt    DateTime?
   expiresAt DateTime?
-
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([groupId])
   @@index([usedAt])
@@ -71,30 +63,26 @@ model Invite {
 }
 
 model MagicLink {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   email     String
-  token     String   @unique
+  token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   next      String?
 }
 
 model SongOfTheDay {
-  id              String   @id @default(cuid())
-  userId          String
-  date            DateTime
-
-  spotifyTrackId  String
-  trackName       String
-  artistName      String
-  coverUrl        String?
-
-  createdAt       DateTime @default(now())
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String
+  date           String
+  spotifyTrackId String
+  trackName      String
+  artistName     String
+  coverUrl       String?
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([date])
 }
-

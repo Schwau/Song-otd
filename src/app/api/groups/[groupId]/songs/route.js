@@ -11,13 +11,15 @@ function readSessionToken(req) {
 
 function todayKey() {
   const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-export async function GET(req, ctx) {
+export async function GET(req, { params }) {
   try {
-    const { groupId } = await ctx.params;
+    const { groupId } = await params;
 
     // 1) Auth
     const token = readSessionToken(req);
@@ -33,7 +35,7 @@ export async function GET(req, ctx) {
       return NextResponse.json({ error: "Session expired" }, { status: 401 });
     }
 
-    // 2) Membership prüfen
+    // 2) Membership check
     const membership = await prisma.membership.findUnique({
       where: {
         userId_groupId: {
@@ -47,20 +49,9 @@ export async function GET(req, ctx) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 3) Mitglieder
+    // 3) Alle Mitglieder inkl. Userdaten
     const members = await prisma.membership.findMany({
       where: { groupId },
-      select: { userId: true },
-    });
-
-    const userIds = members.map((m) => m.userId);
-
-    // 4) Songs des Tages
-    const songs = await prisma.songOfTheDay.findMany({
-      where: {
-        userId: { in: userIds },
-        date: todayKey(),
-      },
       include: {
         user: {
           select: {
@@ -70,10 +61,26 @@ export async function GET(req, ctx) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ songs });
+    // 4) Alle Songs von heute
+    const songsToday = await prisma.songOfTheDay.findMany({
+      where: {
+        userId: { in: members.map((m) => m.userId) },
+        date: todayKey(),
+      },
+    });
+
+    // 5) Zusammenführen (DAS ist der entscheidende Teil)
+    const result = members.map((m) => {
+      const song = songsToday.find((s) => s.userId === m.userId) || null;
+      return {
+        user: m.user,
+        song,
+      };
+    });
+
+    return NextResponse.json({ songs: result });
   } catch (e) {
     console.error("GET /api/groups/[groupId]/songs", e);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

@@ -24,7 +24,9 @@ export async function POST(req) {
     },
   });
 
-const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/magic/confirm?token=${token}`;
+const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+const url = `${origin}/api/auth/magic/confirm?token=${token}`;
+
 
 console.log("✨ MAGIC LINK:", url);
 

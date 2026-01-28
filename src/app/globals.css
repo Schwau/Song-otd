@@ -7,6 +7,18 @@ html {
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* UI surfaces */
+  --card: #ffffff;
+  --card-muted: #f3f4f6;
+
+  /* borders & dividers */
+  --border: rgba(0, 0, 0, 0.08);
+
+  /* text levels */
+  --text-muted: rgba(0, 0, 0, 0.6);
+
+  /* accent */
+  --accent: #1DB954;
 }
 
 @theme inline {
@@ -20,6 +32,15 @@ html {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --card: rgba(255, 255, 255, 0.06);
+    --card-muted: rgba(255, 255, 255, 0.04);
+
+    --border: rgba(255, 255, 255, 0.12);
+
+    --text-muted: rgba(255, 255, 255, 0.6);
+
+    --accent: #1DB954;
   }
 }
 

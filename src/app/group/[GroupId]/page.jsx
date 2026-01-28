@@ -5,29 +5,36 @@ import Background from "../../../components/Background";
 import TopNav from "../../../components/TopNav";
 import { useParams, useRouter } from "next/navigation";
 
-
-export default function GroupPage({ params }) {
+export default function GroupPage() {
   const router = useRouter();
-  const p = useParams();
-  const groupId = p?.groupId ?? p?.GroupId;
+  const params = useParams();
+  const groupId = params?.groupId;
 
   const [loading, setLoading] = useState(true);
   const [group, setGroup] = useState(null);
   const [error, setError] = useState(null);
+
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState(null);
   const [inviteLink, setInviteLink] = useState(null);
   const [inviteExpiresAt, setInviteExpiresAt] = useState(null);
+
   const [me, setMe] = useState(null);
   const [songs, setSongs] = useState([]);
   const [songsLoading, setSongsLoading] = useState(true);
 
+  /* ======================
+     INVITE
+     ====================== */
+
   async function createInvite() {
     if (!groupId) return;
+
     setInviteLoading(true);
     setInviteError(null);
     setInviteLink(null);
     setInviteExpiresAt(null);
+
     try {
       const res = await fetch(`/api/groups/${groupId}/invites`, {
         method: "POST",
@@ -35,107 +42,94 @@ export default function GroupPage({ params }) {
         body: JSON.stringify({ expiresInDays: 7 }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setInviteError(data?.error || "Invite konnte nicht erstellt werden.");
         setInviteLoading(false);
         return;
       }
 
-      const data = await res.json();
-      setInviteExpiresAt(data?.invite?.expiresAt ?? null);
-      const code = data?.invite?.code;
-
-      if (!code) {
-        setInviteError("Invite konnte nicht erstellt werden.");
-        setInviteLoading(false);
-        return;
-      }
-
-      const link = `${window.location.origin}/invite/${code}`;
+      const link = `${window.location.origin}/invite/${data.invite.code}`;
       setInviteLink(link);
+      setInviteExpiresAt(data.invite.expiresAt);
 
-      // copy-to-clipboard (best effort)
       try {
         await navigator.clipboard.writeText(link);
       } catch {}
 
       setInviteLoading(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setInviteError("Invite konnte nicht erstellt werden.");
       setInviteLoading(false);
     }
   }
+
+  /* ======================
+     LOAD GROUP + ME
+     ====================== */
+
   useEffect(() => {
-    let cancelled = false;
+    let alive = true;
 
     async function load() {
       try {
-        // 1) Auth / onboarding über /api/me
         const meRes = await fetch("/api/me", { cache: "no-store" });
-        const me = await meRes.json();
+        const meData = await meRes.json();
 
-        if (!me.user) {
+        if (!meData.user) {
           router.replace("/login");
           return;
         }
-        setMe(me.user);
-        if (!me.user.onboardingDone) {
+
+        if (!meData.user.onboardingDone) {
           router.replace("/onboarding");
           return;
         }
-        
-        // 2) Group Daten über API
-        const res = await fetch(`/api/groups/${groupId}`, { cache: "no-store" });
 
-        if (res.status === 401) {
-          router.replace("/login");
-          return;
-        }
+        if (!alive) return;
+        setMe(meData.user);
+
+        const res = await fetch(`/api/groups/${groupId}`, {
+          cache: "no-store",
+        });
+
         if (res.status === 403) {
-          if (!cancelled) {
-            setError("Du bist kein Mitglied dieser Gruppe.");
-            setLoading(false);
-          }
+          setError("Du bist kein Mitglied dieser Gruppe.");
+          setLoading(false);
           return;
         }
+
         if (!res.ok) {
-          if (!cancelled) {
-            setError("Gruppe konnte nicht geladen werden.");
-            setLoading(false);
-          }
+          setError("Gruppe konnte nicht geladen werden.");
+          setLoading(false);
           return;
         }
 
         const data = await res.json();
-        if (!cancelled) {
-          setGroup(data.group || null);
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Group page load error:", err);
-        if (!cancelled) {
-          setError("Fehler beim Laden der Gruppe.");
-          setLoading(false);
-        }
+        if (!alive) return;
+
+        setGroup(data.group);
+        setLoading(false);
+      } catch {
+        if (!alive) return;
+        setError("Fehler beim Laden der Gruppe.");
+        setLoading(false);
       }
     }
 
     if (groupId) load();
-    else {
-      setError("Ungültige Gruppen-ID.");
-      setLoading(false);
-    }
-
     return () => {
-      cancelled = true;
+      alive = false;
     };
-  }, [router, groupId]);
-  
+  }, [groupId, router]);
+
+  /* ======================
+     LOAD SONGS
+     ====================== */
+
   useEffect(() => {
     if (!groupId) return;
-
     let alive = true;
 
     async function loadSongs() {
@@ -145,14 +139,10 @@ export default function GroupPage({ params }) {
           cache: "no-store",
           credentials: "include",
         });
-
         const data = await res.json();
         if (!alive) return;
-
         setSongs(data?.songs ?? []);
-        console.log("GROUP SONGS:", data?.songs);
-      } catch (e) {
-        console.error("Failed to load group songs", e);
+      } catch {
         if (!alive) return;
         setSongs([]);
       } finally {
@@ -167,37 +157,69 @@ export default function GroupPage({ params }) {
     };
   }, [groupId]);
 
+  /* ======================
+     RENDER
+     ====================== */
+
   return (
-    <main className="relative min-h-screen text-white pt-20">
+    <main className="relative min-h-screen pt-20">
       <Background />
       <TopNav />
 
       <section className="relative z-10 mx-auto max-w-6xl px-6 pt-10 pb-10">
         <a
           href="/groups"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-white/60 hover:text-white transition"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-black/60 hover:text-black transition dark:text-white/60 dark:hover:text-white"
         >
           ← Alle Gruppen
         </a>
 
-        <header className="
-          mt-6
-          rounded-3xl
-          bg-gradient-to-br from-white/10 via-white/5 to-transparent
-          border border-white/10
-          p-8
-          relative
-        ">
-          <div className="text-xs uppercase tracking-widest text-white/40">
+        {/* ======================
+            HEADER
+           ====================== */}
+
+        <header
+          
+          className="
+            mt-6 relative rounded-3xl p-8
+            backdrop-blur-xl transition
+
+            /* LIGHT */
+            bg-white/80 border border-black/10
+            shadow-[0_20px_50px_-30px_rgba(0,0,0,0.25)]
+
+            /* DARK */
+            dark:bg-black/40
+            dark:border-white/10
+            dark:shadow-[0_20px_60px_-30px_rgba(0,0,0,0.9)]
+          "
+        >
+          <div
+            className="
+              pointer-events-none absolute inset-0 -z-10 rounded-3xl
+
+              /* LIGHT MODE */
+              bg-gradient-to-br
+              from-emerald-400/15 via-sky-400/10 to-transparent
+              opacity-100
+
+              /* DARK MODE */
+              dark:from-emerald-400/10
+              dark:via-transparent
+              dark:to-transparent
+            "
+          />
+
+          <div className="text-xs uppercase tracking-widest text-black/40 dark:text-white/40">
             Gruppe
           </div>
 
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight text-black dark:text-white">
             {loading ? "Lädt…" : group?.name ?? "Unbekannte Gruppe"}
           </h1>
 
           {!loading && !error && (
-            <p className="mt-2 text-sm text-white/60">
+            <p className="mt-2 text-sm text-black/60 dark:text-white/60">
               {group?.members?.length ?? 0} Mitglieder · Deine Rolle:{" "}
               {group?.yourRole ?? "member"}
             </p>
@@ -209,32 +231,56 @@ export default function GroupPage({ params }) {
               disabled={inviteLoading}
               className="
                 absolute top-6 right-6
-                rounded-full bg-white/10
-                px-4 py-2 text-sm font-semibold
-                hover:bg-white/15 transition
+                rounded-full px-4 py-2 text-sm font-semibold
+                border border-black/10 bg-black/[0.03]
+                hover:bg-black/[0.06] transition
                 disabled:opacity-50
+                dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/15
               "
             >
               {inviteLoading ? "Erstelle…" : "Invite erstellen"}
             </button>
           )}
+
+          {inviteLink && (
+            <div className="mt-6 rounded-2xl border border-black/10 bg-black/[0.03] p-4 text-sm dark:border-white/10 dark:bg-black/20">
+              <div className="font-semibold">Invite-Link</div>
+              <div className="mt-1 break-all text-xs text-black/70 dark:text-white/70">
+                {inviteLink}
+              </div>
+              {inviteExpiresAt && (
+                <div className="mt-1 text-xs text-black/50 dark:text-white/50">
+                  Läuft ab:{" "}
+                  {new Date(inviteExpiresAt).toLocaleString("de-DE")}
+                </div>
+              )}
+            </div>
+          )}
+
+          {inviteError && (
+            <div className="mt-4 text-sm text-red-500">{inviteError}</div>
+          )}
         </header>
 
+        {/* ======================
+            SONGS
+           ====================== */}
+
         <section className="mt-10">
-          <h2 className="text-lg font-semibold text-white/80">
+          <h2 className="text-lg font-semibold text-black/80 dark:text-white/80">
             Heute
           </h2>
 
           {songsLoading ? (
-            <div className="mt-4 text-white/60">
+            <div className="mt-4 text-black/60 dark:text-white/60">
               Lade Songs…
             </div>
           ) : songs.length === 0 ? (
-            <div className="mt-4 text-white/50">
+            <div className="mt-4 text-black/50 dark:text-white/50">
               🌅 Heute hat noch niemand einen Song gesetzt
             </div>
           ) : (
-            <div className="mt-4 space-y-1">
+            <div className="mt-4 space-y-2">
               {songs.map((entry) => {
                 const isMe = entry.user.id === me?.id;
                 const hasSong = !!entry.song;
@@ -244,38 +290,29 @@ export default function GroupPage({ params }) {
                     key={entry.user.id}
                     className="
                       flex items-center justify-between
-                      px-6 py-4
-                      rounded-3xl
-                      bg-white/[0.02]
-                      hover:bg-white/[0.06]
+                      px-6 py-4 rounded-3xl
+                      border border-black/10
+                      bg-black/[0.03]
+                      hover:bg-black/[0.06]
                       transition
+                      dark:border-white/10
+                      dark:bg-white/[0.02]
+                      dark:hover:bg-white/[0.06]
                     "
                   >
-                    {/* LEFT */}
                     <div className="flex items-center gap-5 min-w-0">
-                      {/* Avatar */}
-                      <div
-                        className="
-                          h-14 w-14 rounded-full
-                          bg-white/10
-                          flex items-center justify-center
-                          text-lg font-semibold
-                          shrink-0
-                        "
-                      >
+                      <div className="h-14 w-14 rounded-full bg-black/10 flex items-center justify-center text-lg font-semibold dark:bg-white/10">
                         {entry.user.username?.[0]?.toUpperCase() ?? "?"}
                       </div>
 
-                      {/* Name + Song */}
                       <div className="min-w-0">
-                        <div className="text-base font-semibold truncate">
+                        <div className="text-base font-semibold truncate text-black dark:text-white">
                           @{entry.user.username ?? "user"}
                         </div>
 
                         {hasSong ? (
                           <div className="mt-2 flex items-center gap-4">
-                            {/* Cover */}
-                            <div className="h-14 w-14 rounded-xl overflow-hidden bg-white/10 shrink-0">
+                            <div className="h-14 w-14 rounded-xl overflow-hidden bg-black/10 dark:bg-white/10">
                               {entry.song.coverUrl && (
                                 <img
                                   src={entry.song.coverUrl}
@@ -285,51 +322,43 @@ export default function GroupPage({ params }) {
                               )}
                             </div>
 
-                            {/* Song Meta */}
                             <div className="min-w-0">
-                              <div className="text-sm font-medium truncate">
+                              <div className="text-sm font-medium truncate text-black dark:text-white">
                                 {entry.song.trackName}
                               </div>
-                              <div className="text-xs text-white/60 truncate">
+                              <div className="text-xs text-black/60 dark:text-white/60 truncate">
                                 {entry.song.artistName}
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-2 text-sm text-white/50">
+                          <div className="mt-2 text-sm text-black/50 dark:text-white/50">
                             Heute noch kein Song
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* RIGHT */}
                     {!hasSong && isMe && (
                       <button
                         onClick={() => router.push("/")}
                         className="
-                          shrink-0
-                          rounded-xl bg-[#1DB954]
+                          shrink-0 rounded-xl
+                          bg-[#1DB954]
                           px-4 py-2.5
-                          text-sm font-semibold
-                          text-black
-                          hover:brightness-110
-                          transition
+                          text-sm font-semibold text-black
+                          hover:brightness-110 transition
                         "
                       >
                         Song hinzufügen
                       </button>
                     )}
                   </div>
-
                 );
               })}
             </div>
           )}
         </section>
-
-
-
       </section>
     </main>
   );

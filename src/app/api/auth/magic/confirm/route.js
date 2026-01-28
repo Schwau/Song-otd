@@ -5,66 +5,57 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export async function GET(req) {
+  console.log("CONFIRM START");
+
   try {
     const { searchParams } = new URL(req.url);
     const token = searchParams.get("token");
+    console.log("TOKEN:", token);
 
-    if (!token) {
-      return NextResponse.redirect(
-        new URL("/login", process.env.APP_URL)
-      );
-    }
-
-    const magic = await prisma.magicLink.findUnique({
-      where: { token },
-    });
-
-    if (!magic || magic.usedAt || magic.expiresAt < new Date()) {
-      return NextResponse.redirect(
-        new URL("/login?error=invalid", process.env.APP_URL)
-      );
-    }
+    const magic = await prisma.magicLink.findUnique({ where: { token } });
+    console.log("MAGIC:", magic);
 
     let user = await prisma.user.findUnique({
       where: { email: magic.email },
     });
+    console.log("USER FOUND:", user?.id);
 
     if (!user) {
       user = await prisma.user.create({
         data: { email: magic.email },
       });
+      console.log("USER CREATED:", user.id);
     }
+
+    const sessionToken = crypto.randomBytes(32).toString("hex");
+    console.log("SESSION TOKEN GEN");
 
     const session = await prisma.session.create({
       data: {
-        token: crypto.randomBytes(32).toString("hex"),
+        token: sessionToken,
         userId: user.id,
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
-
-    await prisma.magicLink.update({
-      where: { id: magic.id },
-      data: { usedAt: new Date() },
-    });
+    console.log("SESSION CREATED:", session.id);
 
     const res = NextResponse.redirect(
-      new URL(magic.next ?? "/", process.env.APP_URL)
+      new URL("/", process.env.APP_URL)
     );
 
     res.cookies.set("songotd_session", session.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 30,
     });
 
+    console.log("COOKIE SET");
     return res;
+
   } catch (e) {
-    console.error("MAGIC CONFIRM ERROR", e);
-    return NextResponse.redirect(
-      new URL("/login?error=server", process.env.APP_URL)
-    );
+    console.error("CONFIRM CRASH:", e);
+    throw e;
   }
 }
+

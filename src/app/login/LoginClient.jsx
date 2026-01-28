@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Background from "../../components/Background";
 
 export default function LoginClient() {
   const [email, setEmail] = useState("");
@@ -34,7 +35,7 @@ export default function LoginClient() {
 
       setStatus("sent");
       if (data?.url) setMagicUrl(data.url);
-    } catch (err) {
+    } catch {
       setStatus("error");
       setError("Netzwerkfehler.");
     }
@@ -47,62 +48,169 @@ export default function LoginClient() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-6 pt-28">
-      <h1 className="text-2xl font-semibold text-white">Login</h1>
-      <p className="mt-2 text-white/60">
-        Gib deine E-Mail ein – du bekommst einen Login-Link.
-      </p>
+    <main className="relative min-h-screen">
+      {/* 🌈 Background */}
+      <Background />
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-3">
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          type="email"
-          placeholder="joao@test.de"
-          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/30 focus:border-white/20"
-        />
+      {/* Content */}
+      <div className="relative z-10 mx-auto max-w-lg px-6 pt-28">
+        <h1 className="text-2xl font-semibold text-black dark:text-white">
+          Login
+        </h1>
 
-        <button
-          disabled={status === "sending"}
-          className="w-full rounded-2xl bg-[#1DB954] px-4 py-3 font-semibold text-black transition hover:brightness-110 active:brightness-95 disabled:opacity-60"
+        <p className="mt-2 text-black/60 dark:text-white/60">
+          Gib deine E-Mail ein – du bekommst einen Login-Link.
+        </p>
+
+        {/* Card */}
+        <div
+          className="
+            mt-6
+            rounded-3xl
+            border border-black/10
+            bg-white/80
+            p-6
+            backdrop-blur
+            shadow-sm
+            dark:border-white/10
+            dark:bg-white/5
+          "
         >
-          {status === "sending" ? "Sende…" : "Magic Link senden"}
-        </button>
+          <form onSubmit={onSubmit} className="space-y-3">
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="joao@test.de"
+              className="
+                w-full rounded-2xl
+                border border-black/10
+                bg-white
+                px-4 py-3
+                text-black
+                placeholder:text-black/40
+                outline-none
+                focus:border-emerald-400/50
+                focus:ring-2 focus:ring-emerald-400/30
+                dark:border-white/15
+                dark:bg-white/5
+                dark:text-white
+                dark:placeholder:text-white/30
+              "
+            />
 
-        {status === "error" && (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
+            <button
+              disabled={status === "sending"}
+              className="
+                w-full rounded-2xl
+                bg-[#1DB954]
+                px-4 py-3
+                font-semibold
+                text-black
+                transition
+                hover:brightness-110
+                active:brightness-95
+                disabled:opacity-60
+              "
+            >
+              {status === "sending" ? "Sende…" : "Magic Link senden"}
+            </button>
 
-        {status === "sent" && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
-            Link wurde erstellt. Check deine Mail.
-            {magicUrl && (
-              <div className="mt-3 space-y-2">
-                <div className="break-all rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/70">
-                  {magicUrl}
-                </div>
-                <div className="flex gap-2">
-                  <a
-                    href={magicUrl}
-                    className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
-                  >
-                    Link öffnen
-                  </a>
-                  <button
-                    type="button"
-                    onClick={copyLink}
-                    className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/15"
-                  >
-                    Kopieren
-                  </button>
-                </div>
+            {/* Error */}
+            {status === "error" && (
+              <div
+                className="
+                  rounded-2xl
+                  border border-red-500/20
+                  bg-red-500/10
+                  px-4 py-3
+                  text-sm
+                  text-red-700
+                  dark:text-red-200
+                "
+              >
+                {error}
               </div>
             )}
-          </div>
-        )}
-      </form>
+
+            {/* Success */}
+            {status === "sent" && (
+              <div
+                className="
+                  rounded-2xl
+                  border border-black/10
+                  bg-black/[0.03]
+                  px-4 py-3
+                  text-sm
+                  text-black/80
+                  dark:border-white/10
+                  dark:bg-white/5
+                  dark:text-white/80
+                "
+              >
+                Link wurde erstellt. Check deine Mail.
+
+                {magicUrl && (
+                  <div className="mt-3 space-y-2">
+                    <div
+                      className="
+                        break-all rounded-xl
+                        border border-black/10
+                        bg-white
+                        px-3 py-2
+                        text-xs
+                        text-black/70
+                        dark:border-white/10
+                        dark:bg-black/30
+                        dark:text-white/70
+                      "
+                    >
+                      {magicUrl}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <a
+                        href={magicUrl}
+                        className="
+                          rounded-xl
+                          bg-black/5
+                          px-3 py-2
+                          text-xs font-semibold
+                          text-black
+                          hover:bg-black/10
+                          dark:bg-white/10
+                          dark:text-white
+                          dark:hover:bg-white/15
+                        "
+                      >
+                        Link öffnen
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={copyLink}
+                        className="
+                          rounded-xl
+                          bg-black/5
+                          px-3 py-2
+                          text-xs font-semibold
+                          text-black
+                          hover:bg-black/10
+                          dark:bg-white/10
+                          dark:text-white
+                          dark:hover:bg-white/15
+                        "
+                      >
+                        Kopieren
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
     </main>
   );
 }

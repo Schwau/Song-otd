@@ -187,7 +187,7 @@ export default function Home() {
   const showContent = phase === "reveal";
 
   return (
-    <main className="relative min-h-screen text-white pt-20">
+    <main className="relative min-h-screen text-black dark:text-white pt-20">
       <Background />
 
       {/* Date badge */}
@@ -220,10 +220,10 @@ export default function Home() {
       {/* Content */}
       <section className="relative z-10 mx-auto max-w-6xl px-6 pt-6 pb-10">
         <h1 className="mt-6 text-5xl font-semibold tracking-tight md:text-6xl">
-          Song <span className="text-white/70">des Tages</span>
+          Song <span className="text-black/60 dark:text-white/70">des Tages</span>
         </h1>
 
-        <p className="mt-4 max-w-xl text-white/70 md:text-lg">
+        <p className="mt-4 max-w-xl text-black/70 dark:text-white/70 md:text-lg">
           Dein Highlight des Tages – zum Teilen mit der Welt.
         </p>
 
@@ -242,7 +242,13 @@ export default function Home() {
         )}
 
         {showContent && !song && (
-          <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-6 text-white/60">
+          <div
+            className="
+              mt-8 rounded-2xl p-6
+              border border-black/10 bg-white/70 text-black/70
+              dark:border-white/10 dark:bg-black/20 dark:text-white/60
+            "
+          >
             Du hast heute noch keinen Song gesetzt.
           </div>
         )}
@@ -253,12 +259,18 @@ export default function Home() {
 
         {/* NOT LOGGED IN */}
         {!meLoading && !me && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 px-6 py-6">
-            <div className="text-lg font-semibold">
+          <div
+            className="
+              mt-6 rounded-2xl px-6 py-6
+              border border-black/10 bg-white/70
+              dark:border-white/10 dark:bg-black/20
+            "
+          >
+            <div className="text-lg font-semibold text-black dark:text-white">
               Melde dich an, um deinen Song des Tages zu setzen
             </div>
 
-            <p className="mt-2 text-sm text-white/60">
+            <p className="mt-2 text-sm text-black/60 dark:text-white/60">
               Dein Song des Tages ist persönlich – bitte logge dich ein.
             </p>
 
@@ -274,15 +286,28 @@ export default function Home() {
 
         {/* LOGGED IN + NO SONG YET */}
         {!meLoading && me && !songLoading && !song && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
+          <div
+            className="
+              mt-6 rounded-2xl px-4 py-4
+              border border-black/10 bg-white/70
+              dark:border-white/10 dark:bg-black/20
+            "
+          >
             <div className="text-sm font-semibold">Setze deinen Song des Tages</div>
 
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Song suchen…"
-              className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40"
-            />
+              className="
+                mt-3 w-full rounded-xl px-4 py-3 text-sm
+                border border-black/15 bg-white text-black
+                placeholder:text-black/40
+                focus:outline-none focus:ring-2 focus:ring-[#1DB954]/40
+                dark:border-white/15 dark:bg-white/5 dark:text-white
+                dark:placeholder:text-white/40
+              "
+                          />
 
             {selectedSong && (
               <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-3 py-2">
